@@ -1,66 +1,67 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Rapport d'API - Gestion des Sauces
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 1. Création du Contrôleur Sauces pour l'API
 
-## About Laravel
+Afin de transformer la gestion des Sauces du projet en une API, la première étape a été de créer un nouveau contrôleur spécifique pour l'API. Cela permet de ne pas perdre l'ancienne version du contrôleur.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+```php
+php artisan make:controller Api/SaucesController
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Cette commande génère un nouveau contrôleur SaucesController dans un sous-dossier Api, isolant ainsi les fonctionnalités liées à l'API des autres parties du projet.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-## Learning Laravel
+## 2. Adaptation des Méthodes du Contrôleur
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Ensuite, il a été nécessaire d'adapter chaque méthode du contrôleur existant afin de retourner des réponses au format JSON, au lieu d’utiliser des vues.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Par exemple, la méthode show dans le contrôleur initial était définie comme suit :
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```php
+    public function show($id_sauce)
+    {
+        $sauce = Sauces::where('id_sauce', $id_sauce)->firstOrFail();
+        return view('sauces.show', compact('sauce'));
+    }
+```
 
-## Laravel Sponsors
+Dans la nouvelle version API, elle a été modifiée pour retourner une réponse JSON, ainsi :
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```php
+    public function show($id_sauce)
+    {
+        $sauce = Sauces::find($id_sauce);
+        if(!$sauce){
+            return response()->json(["message"=> "Sauce inexistante"],404);
+        }
+        return response()->json($sauce);
+    }
+```
+Ici, en cas de sauce inexistante, une réponse JSON avec un message d’erreur et un code HTTP 404 est renvoyée.
+Si la sauce est trouvée, ses informations sont retournées au format JSON.
 
-### Premium Partners
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+## 3. Définition des Routes API
 
-## Contributing
+Pour exposer les fonctionnalités de notre contrôleur API, il a fallu définir les routes correspondantes. Ces routes sont ajoutées dans le fichier routes/api.php afin de gérer les requêtes API sans interférer avec les routes web classiques.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```php
+use App\Http\Controllers\Api\SaucesController;
 
-## Code of Conduct
+Route::apiResource('sauces', SaucesController::class);
+```
+Cette ligne de code permet de créer automatiquement les routes RESTful dont nous avons besoin pour les méthodes index, store, show, update et destroy du contrôleur, facilitant ainsi la gestion des clients via des requêtes HTTP.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 4. Test de l'API
+Une fois les routes mises en place, il est possible de tester directement les requêtes GET dans l'URL de l'application en utilisant un navigateur ou un outil comme Postman. Par exemple, en accédant à l'URL suivante :
+http://127.0.0.1:8000/api/sauces/1
 
-## Security Vulnerabilities
+La réponse JSON pour un client d'index de base de données 1 trouvé apparait.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Les tests ont également été effectués dans [Postman](https://www.postman.com/), un outil de test d'API, pour valider que le contrôleur renvoie bien les données attendues au format JSON. Cet outil a notammant permis la vérification des requêtes de type POST ou DELETE.
+Un affichage de la liste complète des clients après coup permet de vérifier le fonctionnement de ces méthodes.
 
-## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Conclusion
+
+L'API pour la gestion des sauces a été mise en place avec succès, permettant d'effectuer des opérations CRUD via des requêtes HTTP. Les tests effectués ont montré que les données des sauces sont correctement renvoyées en format JSON, et les erreurs sont gérées avec des codes de statut HTTP appropriés.
